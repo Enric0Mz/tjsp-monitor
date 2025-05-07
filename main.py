@@ -1,5 +1,4 @@
 import time
-import json
 from typing import Dict, Any
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -9,6 +8,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
+
+from src import models
+from src import repository
 
 
 
@@ -25,7 +27,8 @@ CASE_NUMBERS = [
 
 def setup_driver() -> webdriver.Chrome:
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    # Ativar modo --headless em producao
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--start-maximized")
@@ -229,14 +232,24 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     except (NoSuchElementException, TimeoutException) as e:
         print(f"Aviso: Não foi possível extrair as peticoes diversas: {e}")
 
-    print(case_data)
+    case_id = repository.add_process(case_data)
+
 
     
 
 if __name__ == "__main__":
-    driver = setup_driver()
-    all_cases = []
+    # Cricao do banco de dados
+    print("Inicializando banco de dados e tabelas...")
+    models.create_tables()
+    print("Banco de dados e tabelas prontos.")
+    
+    # Instancia do driver 
 
+    driver = setup_driver()
+
+    # Logica principal de scrapping
+
+    all_cases = []
     for case_number in CASE_NUMBERS:
         data = scrap_case(driver, case_number)
         if data:
