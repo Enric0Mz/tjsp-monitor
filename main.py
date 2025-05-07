@@ -232,10 +232,11 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     except (NoSuchElementException, TimeoutException) as e:
         print(f"Aviso: Não foi possível extrair as peticoes diversas: {e}")
 
-    case_id = repository.add_process(case_data)
+    case_id = repository.add_or_update_process(case_data)
+    if case_id:
+        for envolved in case_data["envolved"]:
+            repository.add_envolved(case_id, envolved)
 
-
-    
 
 if __name__ == "__main__":
     # Cricao do banco de dados
