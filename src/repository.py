@@ -88,7 +88,6 @@ def add_envolved(case_id, envolved_data):
             case_id, name, role,
         ))
         conn.commit()
-        print(f"Envolvido '{name}' ({role}) ADICIONADO ao processo ID {case_id}.")
         return cursor.lastrowid 
 
     except sqlite3.Error as e:
@@ -111,7 +110,7 @@ def add_case_event(case_id: int, case_event_data: dict):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         # Verifica se movimentacao ja esta na tabela
         sql_check = """
             SELECT 1 FROM Movimentacoes
@@ -137,6 +136,46 @@ def add_case_event(case_id: int, case_event_data: dict):
         if conn:
             conn.rollback()
         print(f"Erro ao processar movimentação de '{date}' para o processo ID {case_id}: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def add_petition(case_id: int, petition_data: dict):
+    #Adiciona peticao
+    date = petition_data.get('date') 
+    type = petition_data.get('type')
+
+    conn = None
+    try:
+        conn = get_db_connection() 
+        cursor = conn.cursor()
+
+        # Verifica se peticao ja existe no banco de dados 
+        sql_check = """
+            SELECT 1 FROM Peticoes
+            WHERE id_processo = ? AND data_peticao = ? AND tipo_peticao = ?
+            LIMIT 1
+        """
+        cursor.execute(sql_check, (case_id, date, type))
+        
+        if cursor.fetchone():
+            return None
+
+        sql_insert = """
+            INSERT INTO Peticoes (id_processo, data_peticao, tipo_peticao)
+            VALUES (?, ?, ?)
+        """
+        cursor.execute(sql_insert, (case_id, date, type))
+        conn.commit()
+
+        return cursor.lastrowid 
+
+    except sqlite3.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro ao processar peticao de '{date}' para o processo ID {case_id}: {e}")
         return None
     finally:
         if conn:

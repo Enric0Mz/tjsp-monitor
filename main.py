@@ -240,6 +240,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         for case_event in case_data["case_events"]:
             repository.add_case_event(case_id, case_event)
 
+        for petition in case_data["petitions"]:
+            repository.add_petition(case_id, petition)
+
 
 if __name__ == "__main__":
     # Cricao do banco de dados
@@ -253,11 +256,7 @@ if __name__ == "__main__":
 
     # Logica principal de scrapping
 
-    all_cases = []
     for case_number in CASE_NUMBERS:
         data = scrap_case(driver, case_number)
-        if data:
-            all_cases.append(data)
-    print(all_cases)
 
     driver.quit()
