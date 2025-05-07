@@ -116,3 +116,44 @@ def add_envolved(case_id, envolved_data):
     finally:
         if conn:
             conn.close()
+
+
+def add_case_event(case_id: int, case_event_data: dict):
+    # Adiciona movimentacao
+    
+    date = case_event_data.get('date')
+    description = case_event_data.get('description')
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        sql_check = """
+            SELECT 1 FROM Movimentacoes
+            WHERE id_processo = ? AND data_evento = ? AND descricao_evento = ?
+            LIMIT 1
+        """
+        cursor.execute(sql_check, (case_id, date, description))
+        
+        if cursor.fetchone():
+            return None
+
+        sql_insert = """
+            INSERT INTO Movimentacoes (id_processo, data_evento, descricao_evento)
+            VALUES (?, ?, ?)
+        """
+        cursor.execute(sql_insert, (case_id, date, description))
+        conn.commit()
+        result = cursor.lastrowid
+        print(f"Movimentação de '{date}' ADICIONADA ao processo ID {case_id}. ID da Movimentação: {result}")
+        return result
+
+    except sqlite3.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro ao processar movimentação de '{date}' para o processo ID {case_id}: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()

@@ -237,6 +237,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         for envolved in case_data["envolved"]:
             repository.add_envolved(case_id, envolved)
 
+        for case_event in case_data["case_events"]:
+            repository.add_case_event(case_id, case_event)
+
 
 if __name__ == "__main__":
     # Cricao do banco de dados
