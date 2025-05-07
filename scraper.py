@@ -1,4 +1,6 @@
 import time
+import logging
+import os
 from typing import Dict, Any
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -12,6 +14,23 @@ from webdriver_manager.chrome import ChromeDriverManager
 from src import models
 from src import repository
 
+log_dir = os.path.join(os.getcwd(), "logs")
+os.makedirs(log_dir, exist_ok=True)
+
+# Caminho do arquivo de log
+log_file = os.path.join(log_dir, "scraper.logs")
+
+# Configuração do logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_file, mode='a'),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 
 CASE_NUMBERS = [
@@ -28,7 +47,8 @@ CASE_NUMBERS = [
 def setup_driver() -> webdriver.Chrome:
     chrome_options = Options()
     # Ativar modo --headless em producao
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--start-maximized")
@@ -46,9 +66,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "numeroDigitoAnoUnificado"))
         )
-        print("Formulário de busca carregado.")
+        logger.info("Scrapper logs - Formulário de busca carregado.")
     except TimeoutException:
-        print("Erro: Formulário de busca não carregou a tempo.")
+        logger.error("Scrapper logs - Erro: Formulário de busca não carregou a tempo.")
         return None
 
     #Usa list slicing para separar numero e foro
@@ -61,9 +81,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     driver.find_element(By.ID, "botaoConsultarProcessos").click()
     try:
         driver.find_element(By.ID, "containerDadosPrincipaisProcesso")
-        print(f"Página do processo {case_number} carregada.")
+        logger.info(f"Scrapper logs - Página do processo {case_number} carregada.")
     except NoSuchElementException:
-        print(f"Processo {case_number} não encontrado ou não retornou resultados.")
+        logger.error(f"Scrapper logs - Processo {case_number} não encontrado ou não retornou resultados.")
         return None
 
     # Definicao de um processo
@@ -91,19 +111,19 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     # Items do processo
     # Abrindo dropdown
     try:
-        print("Tentando expandir dados secundários...")
+        logger.info("Scrapper logs - Tentando expandir dados secundários...")
         see_more_btn1 = driver.find_element(By.ID, "botaoExpandirDadosSecundarios")
         see_more_btn1.click()
         WebDriverWait(driver, 5).until(
             EC.visibility_of_element_located((By.ID, "dataHoraDistribuicaoProcesso"))
         )
-        print("Dropdown de dados secundários expandido.")
+        logger.info("Scrapper logs - Dropdown de dados secundários expandido.")
     except (NoSuchElementException, TimeoutException) as e:
-        print(f"Aviso: Não foi possível expandir/encontrar dados secundários: {e}")
+        logger.error(f"Scrapper logs - Aviso: Não foi possível expandir/encontrar dados secundários: {e}")
         pass
 
     # Extracao de dados - cabecalho
-    print("Extraindo dados do cabeçalho...")
+    logger.info("Scrapper logs - Extraindo dados do cabeçalho...")
     try:
         case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
         case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
@@ -117,35 +137,35 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
             case_data["status"] = driver.find_element(By.CLASS_NAME, "unj-tag").text.strip()
 
     except NoSuchElementException as e:
-        print(f"Aviso: Elemento do cabeçalho não encontrado: {e}")
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho não encontrado: {e}")
 
     # Extracao de dados - dropdown do cabecalho
-    print("Extraindo dados do dropdown do cabeçalho...")
+    logger.info("Scrapper logs - Extraindo dados do dropdown do cabeçalho...")
     try:
         case_data["filling_date"] = driver.find_element(By.ID, "dataHoraDistribuicaoProcesso").text.strip()
         case_data["amount"] = driver.find_element(By.ID, "valorAcaoProcesso").text.strip()
         case_data["area"] = driver.find_element(By.XPATH, '//*[@id="areaProcesso"]/span').text.strip()
         case_data["control"] = driver.find_element(By.ID, "numeroControleProcesso").text.strip()
     except NoSuchElementException as e:
-        print(f"Aviso: Elemento do dropdown do cabeçalho não encontrado: {e}")
+        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho não encontrado: {e}")
 
     # Partes envolvidas
-    print("Extraindo partes envolvidas...")
+    logger.info("Scrapper logs - Extraindo partes envolvidas...")
     try:
         link_partes = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "linkpartes"))
         )
         link_partes.click()
-        print("Link 'Partes do Processo' clicado.")
+        logger.info("\nScrapper logs - Link 'Partes do Processo' clicado.")
 
         parties_table = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.ID, "tableTodasPartes"))
         )
-        print("Tabela de partes visível.")
+        logger.info("Scrapper logs - Tabela de partes visível.")
 
         # Extrai os dados
         parties = parties_table.find_elements(By.XPATH, ".//tbody/tr")
-        print(f"Encontradas {len(parties)} linhas na tabela de partes.")
+        logger.info(f"Scrapper logs - Encontradas {len(parties)} linhas na tabela de partes.")
         for party in parties:
             cols = party.find_elements(By.TAG_NAME, "td")
             if len(cols) >= 2:
@@ -158,13 +178,13 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "name": name,
                         "role": role
                     })
-        print(f"{len(case_data['envolved'])} partes adicionadas.")
+        logger.info(f"Scrapper logs - {len(case_data['envolved'])} partes adicionadas.")
 
     except (NoSuchElementException, TimeoutException) as e:
-        print(f"Aviso: Não foi possível extrair as partes envolvidas: {e}")
+        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as partes envolvidas: {e}")
 
     # Movimentacoes
-    print("Extraindo movimentacoes...")
+    logger.info("Scrapper logs - Extraindo movimentacoes...")
     try:
         # Encontra o botao e clica
         link_movimentacoes = driver.find_element(By.ID, "linkmovimentacoes")
@@ -179,9 +199,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         EC.presence_of_element_located((By.ID, "tabelaTodasMovimentacoes"))
         )
         case_events = case_event_table.find_elements(By.XPATH, ".//tr[contains(@class, 'containerMovimentacao')]")
-        print(f"Encontradas {len(case_events)} linhas de movimentação na tabela.")
+        logger.info(f"Scrapper logs - Encontradas {len(case_events)} linhas de movimentação na tabela.")
         if not case_events:
-            print("Nenhuma movimentacao encontrada")
+            logger.info("Scrapper logs - Nenhuma movimentacao encontrada")
 
         for case_event in case_events:
             cols = case_event.find_elements(By.TAG_NAME, "td")
@@ -195,13 +215,13 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "date": date,
                         "description": description
                     })
-        print(f"{len(case_data['case_events'])} partes adicionadas.")
+        logger.info(f"Scrapper logs - {len(case_data['case_events'])} partes adicionadas.")
 
     except (NoSuchElementException, TimeoutException) as e:
-        print(f"Aviso: Não foi possível extrair as movimentacoes: {e}")
+        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as movimentacoes: {e}")
 
     # Peticoes diversas
-    print("Iniciando extração de Petições...")
+    print("Scrapper logs - Iniciando extração de Petições...")
 
     try:
         # Encontra peticoes diversas na pagina
@@ -213,7 +233,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
 
         petitions = petitions_table.find_element(By.TAG_NAME, "tbody")
         petition_rows = petitions.find_elements(By.XPATH, "./tr")
-        print(f"Encontradas {len(petition_rows)} linhas na tabela de peticoes.")
+        logger.info(f"\nScrapper logs - Encontradas {len(petition_rows)} linhas na tabela de peticoes.")
 
         for petition in petition_rows:
             cols = petition.find_elements(By.TAG_NAME, "td")
@@ -227,10 +247,10 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "date": petition_date,
                         "type": petition_type
                     })
-        print(f"{len(case_data['petitions'])} petições adicionadas.")
+        logger.info(f"Scrapper logs - {len(case_data['petitions'])} petições adicionadas.")
 
     except (NoSuchElementException, TimeoutException) as e:
-        print(f"Aviso: Não foi possível extrair as peticoes diversas: {e}")
+        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as peticoes diversas: {e}")
 
     case_id = repository.add_or_update_process(case_data)
     if case_id:
@@ -246,9 +266,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Cricao do banco de dados
-    print("Inicializando banco de dados e tabelas...")
+    logger.info("Scrapper logs - Inicializando banco de dados e tabelas...")
     models.create_tables()
-    print("Banco de dados e tabelas prontos.")
+    logger.info("Scrapper logs - Banco de dados e tabelas prontos.")
     
     # Instancia do driver 
 
