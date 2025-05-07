@@ -32,7 +32,6 @@ def create_tables():
             classe_processo TEXT,
             juiz TEXT,
             vara TEXT,
-            tribunal TEXT,
             assunto TEXT,
             status TEXT,
             foro TEXT,

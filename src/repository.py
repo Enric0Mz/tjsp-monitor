@@ -8,21 +8,20 @@ def add_or_update_process(case_data):
     sql = """
         INSERT INTO Processos (
             numero_processo, nome_caso, classe_processo, juiz, vara,
-            tribunal, assunto, status, foro, valor_causa, area,
+            assunto, status, foro, valor_causa, area,
             data_distribuicao, controle, data_extracao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(numero_processo) DO UPDATE SET
             nome_caso=excluded.nome_caso,
             classe_processo=excluded.classe_processo,
             juiz=excluded.juiz,
             vara=excluded.vara,
-            tribunal=excluded.tribunal,
             assunto=excluded.assunto,
             status=excluded.status,
             foro=excluded.foro,
             valor_causa=excluded.valor_causa,
             area=excluded.area,
-            data_distribuicao=excluded.data_distribuicao, -- Cuidado com a conversão de data
+            data_distribuicao=excluded.data_distribuicao,
             controle=excluded.controle,
             data_extracao=CURRENT_TIMESTAMP
     """
@@ -32,7 +31,7 @@ def add_or_update_process(case_data):
         cursor = conn.cursor()
         cursor.execute(sql, (
             case_data.get('number'), case_data.get('name'), case_data.get('_class'),
-            case_data.get('judge'), case_data.get('division'), case_data.get('court'),
+            case_data.get('judge'), case_data.get('division'),
             case_data.get('subject'), case_data.get('status'), case_data.get('foro'),
             case_data.get('amount'), case_data.get('area'),
             case_data.get('filling_date'),

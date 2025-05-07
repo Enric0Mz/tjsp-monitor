@@ -73,7 +73,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         "_class": "",
         "judge": "",
         "division": "",
-        "court": "",
+        "foro": "",
         "subject": "",
         "status": "",
         "amount": "",
@@ -107,7 +107,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     try:
         case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
         case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
-        case_data["court"] = driver.find_element(By.ID, "foroProcesso").text.strip()
+        case_data["foro"] = driver.find_element(By.ID, "foroProcesso").text.strip()
         case_data["division"] = driver.find_element(By.ID, "varaProcesso").text.strip()
         case_data["judge"] = driver.find_element(By.ID, "juizProcesso").text.strip()
         status_elements = driver.find_elements(By.CSS_SELECTOR, "span.unj-tag[style*='margin-left']")
