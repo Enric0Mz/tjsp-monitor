@@ -88,7 +88,9 @@ def add_envolved(case_id, envolved_data):
             case_id, name, role,
         ))
         conn.commit()
-        return cursor.lastrowid 
+        result = cursor.lastrowid 
+        print(f"Envolvido de nome '{name}' ADICIONADO ao processo ID {case_id}. ID da Movimentação: {result}")
+        return result
 
     except sqlite3.Error as e:
         if conn:
@@ -169,8 +171,9 @@ def add_petition(case_id: int, petition_data: dict):
         """
         cursor.execute(sql_insert, (case_id, date, type))
         conn.commit()
-
-        return cursor.lastrowid 
+        result = cursor.lastrowid
+        print(f"Peticao de '{date}' ADICIONADA ao processo ID {case_id}. ID da Movimentação: {result}")
+        return result 
 
     except sqlite3.Error as e:
         if conn:
