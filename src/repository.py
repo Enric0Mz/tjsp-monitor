@@ -56,32 +56,6 @@ def add_or_update_process(case_data):
         if conn:
             conn.close()
 
-def get_envolved(case_id: int, name: str, role: str):
-    # Verifica se envolvido ja esta na tabela
-
-    sql = """
-        SELECT 1 from Envolvidos
-        WHERE id_processo = ? AND nome_envolvido = ? AND papel_envolvido = ?
-        LIMIT 1
-    """
-
-    conn = None
-    exists = False
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(sql, (case_id, name, role))
-        
-        if cursor.fetchone():
-            exists = True
-    
-    except sqlite3.Error as e:
-        print(f"Erro ao verificar existência do envolvido '{name}' para o processo ID {case_id}: {e}")
-    finally:
-        if conn:
-            conn.close()
-    return exists
 
 def add_envolved(case_id, envolved_data):
     # Cria um novo processo
@@ -89,19 +63,28 @@ def add_envolved(case_id, envolved_data):
     name = envolved_data.get('name')
     role = envolved_data.get('role')
 
-    if get_envolved(case_id, name, role):
-        return None
-
-    sql = """
-        INSERT INTO Envolvidos (
-            id_processo, nome_envolvido, papel_envolvido
-        ) VALUES (?, ?, ?)
-    """
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(sql, (
+
+        # Verifica se envolvido ja esta na tabela
+        sql_check = """
+            SELECT 1 from Envolvidos
+            WHERE id_processo = ? AND nome_envolvido = ? AND papel_envolvido = ?
+            LIMIT 1
+        """
+        cursor.execute(sql_check, (case_id, name, role))
+
+        if cursor.fetchone():
+            return None
+        
+        sql_insert = """
+            INSERT INTO Envolvidos (
+                id_processo, nome_envolvido, papel_envolvido
+            ) VALUES (?, ?, ?)
+        """
+        cursor.execute(sql_insert, (
             case_id, name, role,
         ))
         conn.commit()
@@ -128,7 +111,8 @@ def add_case_event(case_id: int, case_event_data: dict):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
+        
+        # Verifica se movimentacao ja esta na tabela
         sql_check = """
             SELECT 1 FROM Movimentacoes
             WHERE id_processo = ? AND data_evento = ? AND descricao_evento = ?
