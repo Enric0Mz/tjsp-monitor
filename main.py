@@ -28,7 +28,7 @@ CASE_NUMBERS = [
 def setup_driver() -> webdriver.Chrome:
     chrome_options = Options()
     # Ativar modo --headless em producao
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--start-maximized")
@@ -106,12 +106,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     print("Extraindo dados do cabeçalho...")
     try:
         case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
-        try:
-
-            case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
-        except NoSuchElementException:
-            print(f"Aviso: Elemento 'assuntoProcesso' não encontrado para o processo {case_number}.")
-
+        case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
         case_data["foro"] = driver.find_element(By.ID, "foroProcesso").text.strip()
         case_data["division"] = driver.find_element(By.ID, "varaProcesso").text.strip()
         case_data["judge"] = driver.find_element(By.ID, "juizProcesso").text.strip()

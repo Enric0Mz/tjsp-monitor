@@ -39,13 +39,11 @@ def add_or_update_process(case_data):
         ))
         conn.commit()
         if cursor.rowcount >= 0:
-            cursor.execute("SELECT id FROM Processos WHERE numero_processo = ?", (case_data.get('number'),))
-            result = cursor.fetchone()
-            if result:
-                print(f"Processo de numero {case_data.get('number')} ADICIONADO ao banco de dados. ID da Movimentação: {result[0]}")
-                return result[0]
+            case_id = case_data.get('number')
+            print(f"Processo de numero {case_id} ADICIONADO ao banco de dados")
+            return case_id
         else:
-            raise sqlite3.Error(f"Operação teve um erro inesperado para o processo {case_data.get('number')}")
+            raise sqlite3.Error(f"Operação teve um erro inesperado para o processo {case_id}")
 
     except sqlite3.Error as e:
         if conn:
@@ -57,7 +55,7 @@ def add_or_update_process(case_data):
             conn.close()
 
 
-def add_envolved(case_id, envolved_data):
+def add_envolved(case_id: str, envolved_data: dict):
     # Cria um novo processo
 
     name = envolved_data.get('name')
@@ -89,7 +87,7 @@ def add_envolved(case_id, envolved_data):
         ))
         conn.commit()
         result = cursor.lastrowid 
-        print(f"Envolvido de nome '{name}' ADICIONADO ao processo ID {case_id}. ID da Movimentação: {result}")
+        print(f"Envolvido de nome '{name}' ADICIONADO ao processo {case_id}. ID da Movimentação: {result}")
         return result
 
     except sqlite3.Error as e:
@@ -102,7 +100,7 @@ def add_envolved(case_id, envolved_data):
             conn.close()
 
 
-def add_case_event(case_id: int, case_event_data: dict):
+def add_case_event(case_id: str, case_event_data: dict):
     # Adiciona movimentacao
     
     date = case_event_data.get('date')
@@ -131,7 +129,7 @@ def add_case_event(case_id: int, case_event_data: dict):
         cursor.execute(sql_insert, (case_id, date, description))
         conn.commit()
         result = cursor.lastrowid
-        print(f"Movimentação de '{date}' ADICIONADA ao processo ID {case_id}. ID da Movimentação: {result}")
+        print(f"Movimentação de '{date}' ADICIONADA ao processo {case_id}. ID da Movimentação: {result}")
         return result
 
     except sqlite3.Error as e:
@@ -144,7 +142,7 @@ def add_case_event(case_id: int, case_event_data: dict):
             conn.close()
 
 
-def add_petition(case_id: int, petition_data: dict):
+def add_petition(case_id: str, petition_data: dict):
     #Adiciona peticao
     date = petition_data.get('date') 
     type = petition_data.get('type')
@@ -172,13 +170,13 @@ def add_petition(case_id: int, petition_data: dict):
         cursor.execute(sql_insert, (case_id, date, type))
         conn.commit()
         result = cursor.lastrowid
-        print(f"Peticao de '{date}' ADICIONADA ao processo ID {case_id}. ID da Movimentação: {result}")
+        print(f"Peticao de '{date}' ADICIONADA ao processo {case_id}. ID da Movimentação: {result}")
         return result 
 
     except sqlite3.Error as e:
         if conn:
             conn.rollback()
-        print(f"Erro ao processar peticao de '{date}' para o processo ID {case_id}: {e}")
+        print(f"Erro ao processar peticao de '{date}' para o processo {case_id}: {e}")
         return None
     finally:
         if conn:

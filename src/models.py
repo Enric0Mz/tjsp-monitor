@@ -26,8 +26,7 @@ def create_tables():
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS Processos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numero_processo TEXT UNIQUE NOT NULL,
+            numero_processo TEXT PRIMARY KEY,
             nome_caso TEXT,
             classe_processo TEXT,
             juiz TEXT,
@@ -49,27 +48,27 @@ def create_tables():
             id_processo INTEGER NOT NULL,
             data_evento TEXT NOT NULL,
             descricao_evento TEXT NOT NULL,
-            FOREIGN KEY(id_processo) REFERENCES Processos(id) ON DELETE CASCADE
+            FOREIGN KEY(id_processo) REFERENCES Processos(numero_processo) ON DELETE CASCADE
         );
             """)
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS Envolvidos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_processo INTEGER NOT NULL,
+            id_processo TEXT NOT NULL,
             nome_envolvido TEXT NOT NULL,
             papel_envolvido TEXT,
-            FOREIGN KEY(id_processo) REFERENCES Processos(id) ON DELETE CASCADE -- Opcional: ON DELETE CASCADE
+            FOREIGN KEY(id_processo) REFERENCES Processos(numero_processo) ON DELETE CASCADE -- Opcional: ON DELETE CASCADE
         );
             """)
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS Peticoes (
             id_peticao INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_processo INTEGER NOT NULL,
+            id_processo TEXT NOT NULL,
             data_peticao TEXT NOT NULL, -- Formato 'YYYY-MM-DD'
             tipo_peticao TEXT NOT NULL,
-            FOREIGN KEY(id_processo) REFERENCES Processos(id) ON DELETE CASCADE
+            FOREIGN KEY(id_processo) REFERENCES Processos(numero_processo) ON DELETE CASCADE
         );
         """)
         
