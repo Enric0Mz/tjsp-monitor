@@ -16,13 +16,13 @@ from src import repository
 
 CASE_NUMBERS = [
     "1075531-81.2021.8.26.0053",
-    # "0034950-46.2018.8.26.0053",
-    # "0010364-03.2022.8.26.0344",
-    # "0032483-55.2022.8.26.0053",
-    # "0001622-51.2023.8.26.0506",
-    # "1053943-81.2022.8.26.0053",
-    # "0423239-43.1999.8.26.0053",
-    # "1008635-22.2022.8.26.0053"
+    "0034950-46.2018.8.26.0053",
+    "0010364-03.2022.8.26.0344",
+    "0032483-55.2022.8.26.0053",
+    "0001622-51.2023.8.26.0506",
+    "1053943-81.2022.8.26.0053",
+    "0423239-43.1999.8.26.0053",
+    "1008635-22.2022.8.26.0053"
 ]
 
 def setup_driver() -> webdriver.Chrome:
@@ -106,7 +106,12 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     print("Extraindo dados do cabeçalho...")
     try:
         case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
-        case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
+        try:
+
+            case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
+        except NoSuchElementException:
+            print(f"Aviso: Elemento 'assuntoProcesso' não encontrado para o processo {case_number}.")
+
         case_data["foro"] = driver.find_element(By.ID, "foroProcesso").text.strip()
         case_data["division"] = driver.find_element(By.ID, "varaProcesso").text.strip()
         case_data["judge"] = driver.find_element(By.ID, "juizProcesso").text.strip()

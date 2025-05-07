@@ -42,6 +42,7 @@ def add_or_update_process(case_data):
             cursor.execute("SELECT id FROM Processos WHERE numero_processo = ?", (case_data.get('number'),))
             result = cursor.fetchone()
             if result:
+                print(f"Processo de numero {case_data.get('number')} ADICIONADO ao banco de dados. ID da Movimentação: {result[0]}")
                 return result[0]
         else:
             raise sqlite3.Error(f"Operação teve um erro inesperado para o processo {case_data.get('number')}")
