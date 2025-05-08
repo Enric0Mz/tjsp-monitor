@@ -181,3 +181,45 @@ def add_petition(case_id: str, petition_data: dict):
     finally:
         if conn:
             conn.close()
+
+
+def add_incident(case_id: str, incident_data: dict):
+    # Adiciona incidente
+
+    incident_date = incident_data.get('date') 
+    incident_class = incident_data.get('class_description')
+
+    conn = None
+    try:
+        conn = get_db_connection() 
+        cursor = conn.cursor()
+        # Verifica se peticao ja existe no banco de dados 
+        sql_check = """
+            SELECT 1 FROM Incidentes
+            WHERE id_processo = ? AND data_incidente = ? AND classe = ?
+            LIMIT 1
+        """
+        cursor.execute(sql_check, (case_id, incident_date, incident_class))
+        
+        if cursor.fetchone():
+            return None 
+
+        sql_insert = """
+            INSERT INTO Incidentes (id_processo, data_incidente, classe)
+            VALUES (?, ?, ?)
+        """
+        cursor.execute(sql_insert, (case_id, incident_date, incident_class))
+        conn.commit()
+        
+        result_id = cursor.lastrowid 
+        print(f"Novo incidente de '{incident_date}', da classe '{incident_class}' adicionado ao caso {case_id}. Id da operacao {result_id}")
+        return result_id
+
+    except sqlite3.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro processando incidente de '{incident_date}',  do processo {case_id}: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()

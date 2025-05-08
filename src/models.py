@@ -66,8 +66,18 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS Peticoes (
             id_peticao INTEGER PRIMARY KEY AUTOINCREMENT,
             id_processo TEXT NOT NULL,
-            data_peticao TEXT NOT NULL, -- Formato 'YYYY-MM-DD'
+            data_peticao TEXT NOT NULL,
             tipo_peticao TEXT NOT NULL,
+            FOREIGN KEY(id_processo) REFERENCES Processos(numero_processo) ON DELETE CASCADE
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Incidentes (
+            id_incidentes INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_processo TEXT NOT NULL,
+            data_incidente TEXT NOT NULL,
+            classe TEXT NOT NULL,
             FOREIGN KEY(id_processo) REFERENCES Processos(numero_processo) ON DELETE CASCADE
         );
         """)
@@ -86,6 +96,9 @@ def create_tables():
         """)
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_peticoes_data ON Peticoes(data_peticao);
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_peticoes_data ON Incidentes(data_peticao);
         """)
 
         print(f"Tabelas do banco de dados verificadas/criadas com sucesso em {DB_PATH}.")
