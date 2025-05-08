@@ -223,3 +223,23 @@ def add_incident(case_id: str, incident_data: dict):
     finally:
         if conn:
             conn.close()
+
+
+def get_case_numbers():
+    # Lista numeros de processo salvos no banco de dados
+    sql = "SELECT numero_processo FROM Processos ORDER BY numero_processo;"
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        results = cursor.fetchall() 
+        
+        case_numbers = [row[0] for row in results] 
+        return case_numbers
+    except Exception as e:
+        print(f"Um erro inesperado ocorreu: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
