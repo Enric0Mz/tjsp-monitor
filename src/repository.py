@@ -243,3 +243,61 @@ def get_case_numbers():
     finally:
         if conn:
             conn.close()
+
+def get_case(case_id: str):
+    # Mostra detalhes de um processo
+
+    conn = None
+    case = {
+        "main_data": None,
+        "involved_parties": [],
+        "case_events": [],
+        "petitions": [],
+        "incidents": []
+    }
+
+    try:
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # 1. Busca dados principais do processo
+        cursor.execute("SELECT * FROM Processos WHERE numero_processo = ?", (case_id,))
+        main_data = cursor.fetchone()
+
+        if not main_data:
+            print(f"Processo '{case_id}' nao foi encontrado.")
+            return None
+
+        case["main_data"] = dict(main_data) 
+
+        # 2. Busca Partes Envolvidas
+        cursor.execute("SELECT * FROM Envolvidos WHERE id_processo = ? ORDER BY nome_envolvido", (case_id,))
+        involved_parties = cursor.fetchall()
+        case["involved_parties"] = [dict(row) for row in involved_parties]
+
+        # 3. Busca Movimentações (Movimentacoes) - Ordenando por ID (ordem de inserção)
+        cursor.execute("SELECT * FROM Movimentacoes WHERE id_processo = ? ORDER BY id LIMIT 50", (case_id,))
+        case_events = cursor.fetchall()
+        case["case_events"] = [dict(row) for row in case_events]
+
+        # 4. Busca Petições (Peticoes) - Ordenando por ID
+        cursor.execute("SELECT * FROM Peticoes WHERE id_processo = ? ORDER BY id_peticao", (case_id,))
+        petitions_rows = cursor.fetchall()
+        case["petitions"] = [dict(row) for row in petitions_rows]
+
+        # 5. Busca Incidentes (Incidentes) - Ordenando por ID
+        cursor.execute("SELECT * FROM Incidentes WHERE id_processo = ? ORDER BY id_incidentes", (case_id,))
+        incidents_rows = cursor.fetchall()
+        case["incidents"] = [dict(row) for row in incidents_rows]
+
+        print(f"Dados do processo {case_id} buscados com sucesso")
+        return case
+
+    except Exception as e:
+        print(f"Um erro inesperado ocorreu para o processo'{case_id}': {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
