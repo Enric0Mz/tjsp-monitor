@@ -1,9 +1,9 @@
 import argparse
 
-from .utils import format_and_print_details
+from .utils import format_and_print_details, format_and_print_event
 from . import repository
 
-def list_all_case_numbers():
+def show_all_case_numbers():
     print("Buscando números de processo salvos no banco de dados...")
     
     case_numbers = repository.get_case_numbers() 
@@ -42,6 +42,28 @@ def show_case_details(case_number_to_find: str):
     )
 
 
+def show_latest_events(limit: int = 50): # Função de controle agora usa a de formatação
+    """Busca as últimas N movimentações do repositório e as imprime usando a função de formatação."""
+    print(f"\nBuscando as últimas {limit} movimentações adicionadas...")
+
+    latest_events = repository.get_latest_case_events(limit=limit)
+
+    if latest_events is None:
+        print("\nErro ao buscar as últimas movimentações do banco de dados.")
+        return
+
+    if not latest_events:
+        print("\nNenhuma movimentação encontrada no banco de dados.")
+        return
+
+    print(f"\n--- Exibindo as {len(latest_events)} Últimas Movimentações Encontradas ---")
+
+    for event in latest_events:
+        format_and_print_event(event) 
+
+    print("\n" + "-" * 50) 
+    print(f"--- Fim da lista de {len(latest_events)} movimentações ---")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Visualizador de dados de processos raspados do TJSP.",
@@ -63,12 +85,20 @@ if __name__ == "__main__":
         help="Mostrar detalhes completos para o número do processo especificado."
     )
 
+    action_group.add_argument(
+        "--recent-events",
+        action="store_true",
+        help="Mostrar as últimas 50 movimentações adicionadas ao banco (todos os processos)."
+    )
+
     args = parser.parse_args()
     if args.processos:
-        list_all_case_numbers()
+        show_all_case_numbers()
     elif args.details:
         show_case_details(args.details)
+    elif args.recent_events:
+        show_latest_events()
     else:
         print("Nenhuma ação específica solicitada. Exibindo lista de números de processos por padrão.")
         print("Use -h ou --help para ver as opções disponíveis.")
-        list_all_case_numbers()
+        show_all_case_numbers()

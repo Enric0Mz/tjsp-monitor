@@ -55,3 +55,20 @@ def format_and_print_details(case_data, involved_parties, events, petitions, inc
         print("(Nenhum incidente encontrado)")
 
     print("="*80)
+
+def format_and_print_event(event_data: dict):
+    print("\n" + "-" * 50) 
+    case_num = event_data.get('id_processo', 'N/A')
+    event_date = event_data.get('data_evento', 'N/A')
+    desc = event_data.get('descricao_evento', 'N/A')
+    
+    print(f"Número do Processo: {case_num}")
+    print(f"Data:            {event_date}")
+    
+    mov_label = "Movimentacão:    "
+    wrapped_desc = textwrap.fill(desc, 
+                                width=70, 
+                                initial_indent=mov_label, 
+                                subsequent_indent=' ' * len(mov_label)
+                            )
+    print(wrapped_desc)

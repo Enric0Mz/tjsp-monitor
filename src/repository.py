@@ -301,3 +301,33 @@ def get_case(case_id: str):
         if conn:
             conn.close()
 
+def get_latest_case_events(limit: int = 50):
+    # Busca ultimas movimentacoes adicionadas
+
+    sql = """
+        SELECT id_processo, data_evento, descricao_evento 
+        FROM Movimentacoes 
+        ORDER BY id DESC 
+        LIMIT ?
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row 
+        cursor = conn.cursor()
+        cursor.execute(sql, (limit,)) # Passa o limite como parâmetro
+        
+        results_rows = cursor.fetchall() 
+        
+        # Converte as linhas para uma lista de dicionários
+        latest_events = [dict(row) for row in results_rows]
+        
+        print(f"Ùltimas {len(latest_events)} movimentacões buscadas com sucesso")
+        return latest_events
+        
+    except Exception as e:
+        print(f"Um erro inesperado ocorreu buscando ultimas movimentacoes: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
