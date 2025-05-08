@@ -27,7 +27,6 @@ def create_tables():
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS Processos (
             numero_processo TEXT PRIMARY KEY,
-            nome_caso TEXT,
             classe_processo TEXT,
             juiz TEXT,
             vara TEXT,

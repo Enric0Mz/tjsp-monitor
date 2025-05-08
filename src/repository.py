@@ -7,12 +7,11 @@ def add_or_update_process(case_data):
 
     sql = """
         INSERT INTO Processos (
-            numero_processo, nome_caso, classe_processo, juiz, vara,
+            numero_processo, classe_processo, juiz, vara,
             assunto, status, foro, valor_causa, area,
             data_distribuicao, controle, data_extracao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(numero_processo) DO UPDATE SET
-            nome_caso=excluded.nome_caso,
             classe_processo=excluded.classe_processo,
             juiz=excluded.juiz,
             vara=excluded.vara,
@@ -30,7 +29,7 @@ def add_or_update_process(case_data):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(sql, (
-            case_data.get('number'), case_data.get('name'), case_data.get('_class'),
+            case_data.get('number'), case_data.get('_class'),
             case_data.get('judge'), case_data.get('division'),
             case_data.get('subject'), case_data.get('status'), case_data.get('foro'),
             case_data.get('amount'), case_data.get('area'),
