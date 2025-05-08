@@ -331,3 +331,27 @@ def get_latest_case_events(limit: int = 50):
     finally:
         if conn:
             conn.close()
+
+def get_tables_size():
+    # Busca tamanho de tabelas salvas no banco de dados 
+    table_names = ["Processos", "Envolvidos", "Movimentacoes", "Peticoes", "Incidentes"]
+    counts = {}
+    conn = None
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        for table in table_names:
+            cursor.execute(f"SELECT COUNT(*) FROM {table};")
+            count = cursor.fetchone()[0]
+            counts[table] = count
+        
+        return counts
+
+    except Exception as e:
+        print(f"Um erro inesperado ocorreu buscando tamanho das tabelas: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()

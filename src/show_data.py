@@ -64,6 +64,25 @@ def show_latest_events(limit: int = 50): # Função de controle agora usa a de f
     print("\n" + "-" * 50) 
     print(f"--- Fim da lista de {len(latest_events)} movimentações ---")
 
+def show_summary():
+    print("\nGerando resumo do banco de dados...")
+
+    counts = repository.get_tables_size()
+
+    if counts is None:
+        print("\nErro ao buscar o resumo do banco de dados. Verifique os logs do repositório.")
+        return
+
+    if not counts:
+        print("\nNenhuma tabela encontrada ou contagem retornou vazia.")
+        return
+
+    print("\n--- Resumo do Banco de Dados (Contagem de Registros) ---")
+    max_len = max(len(table) for table in counts.keys()) if counts else 15
+    
+    for table, count in counts.items():
+        print(f"  - Tabela '{table}':".ljust(max_len + 13) + f"{count} registros") 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Visualizador de dados de processos raspados do TJSP.",
@@ -91,6 +110,12 @@ if __name__ == "__main__":
         help="Mostrar as últimas 50 movimentações adicionadas ao banco (todos os processos)."
     )
 
+    action_group.add_argument(
+        "--summary", 
+        action="store_true", 
+        help="Mostrar contagem de registros em cada tabela." # Descrição do argumento
+    )
+
     args = parser.parse_args()
     if args.processos:
         show_all_case_numbers()
@@ -98,6 +123,8 @@ if __name__ == "__main__":
         show_case_details(args.details)
     elif args.recent_events:
         show_latest_events()
+    elif args.summary:
+        show_summary()
     else:
         print("Nenhuma ação específica solicitada. Exibindo lista de números de processos por padrão.")
         print("Use -h ou --help para ver as opções disponíveis.")
