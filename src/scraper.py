@@ -1,7 +1,6 @@
-import time
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -11,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
+from . import extractor
 from . import models
 from . import repository
 
@@ -57,274 +57,61 @@ def setup_driver() -> webdriver.Chrome:
     return webdriver.Chrome(service=service, options=chrome_options)
     
 
-def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
+def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict:
     url = "https://esaj.tjsp.jus.br/cpopg/open.do"
     driver.get(url)
 
-    #Aguada a pagina carregar ate encontrar form
+    # Wait for form to load
     try:
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "numeroDigitoAnoUnificado"))
         )
-        logger.info("Scrapper logs - Formulário de busca carregado.")
+        logger.info("Formulário carregado com sucesso")
     except TimeoutException:
-        logger.error("Scrapper logs - Erro: Formulário de busca não carregou a tempo.")
+        logger.error("Formulário não carregou a tempo")
         return None
 
-    #Usa list slicing para separar numero e foro
+    # Split case number
     numero_digito_ano = case_number[0:15]
     foro_numero = case_number[21:]
-    
-    #Preenche o form e confirma
+
+    # Fill and submit form
     driver.find_element(By.ID, "numeroDigitoAnoUnificado").send_keys(numero_digito_ano)
     driver.find_element(By.ID, "foroNumeroUnificado").send_keys(foro_numero)
     driver.find_element(By.ID, "botaoConsultarProcessos").click()
+
+    # Check if case page loaded
     try:
         driver.find_element(By.ID, "containerDadosPrincipaisProcesso")
-        logger.info(f"Scrapper logs - Página do processo {case_number} carregada.")
+        logger.info(f"Página do processo {case_number} carregada")
     except NoSuchElementException:
-        logger.error(f"Scrapper logs - Processo {case_number} não encontrado ou não retornou resultados.")
+        logger.error(f"Processo {case_number} não encontrado ou sem resultados")
         return None
 
-    # Definicao de um processo
-    case_data = {
-        "number": case_number,
-        "name": "",
-        "_class": "",
-        "judge": "",
-        "division": "",
-        "foro": "",
-        "subject": "",
-        "status": "",
-        "amount": "",
-        "area": "",
-        "filling_date": "",
-        "control": "",
-        "envolved": [],
-        "case_events": [],
-        "petitions": [],
-        "incidents": []
-    }
+    # Initialize case data
+    case_data = extractor.initialize_case_data(case_number)
 
+    # Extract data
+    extractor.extract_header_data(driver, case_data)
+    extractor.extract_dropdown_data(driver, case_data)
+    extractor.extract_parties(driver, case_data)
+    extractor.extract_movements(driver, case_data)
+    extractor.extract_petitions(driver, case_data)
+    extractor.extract_incidents(driver, case_data)
 
-    # Items do processo
-    # Abrindo dropdown
-    try:
-        logger.info("Scrapper logs - Tentando expandir dados secundários...")
-        see_more_btn1 = driver.find_element(By.ID, "botaoExpandirDadosSecundarios")
-        see_more_btn1.click()
-        WebDriverWait(driver, 5).until(
-            EC.visibility_of_element_located((By.ID, "dataHoraDistribuicaoProcesso"))
-        )
-        logger.info("Scrapper logs - Dropdown de dados secundários expandido.")
-    except (NoSuchElementException, TimeoutException) as e:
-        logger.error(f"Scrapper logs - Aviso: Não foi possível expandir/encontrar dados secundários")
-        pass
-
-    # Extracao de dados - cabecalho
-    logger.info("Scrapper logs - Extraindo dados do cabeçalho...")
-    try:
-        case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'classeProcesso' não encontrado")
-    try:
-        case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'assuntoProcesso' não encontrado")
-    try:
-        case_data["foro"] = driver.find_element(By.ID, "foroProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'foroProcesso' não encontrado")
-    try:
-        case_data["division"] = driver.find_element(By.ID, "varaProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'varaProcesso' não encontrado")
-    try:
-        case_data["judge"] = driver.find_element(By.ID, "juizProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'juizProcesso' não encontrado")
-    try:
-        status_elements = driver.find_elements(By.CSS_SELECTOR, "span.unj-tag[style*='margin-left']")
-        if status_elements:
-            case_data["status"] = status_elements[0].text.strip()
-        else:
-            case_data["status"] = driver.find_element(By.CLASS_NAME, "unj-tag").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'span.unj-tag[style*='margin-left']' não encontrado")
-
-    # Extracao de dados - dropdown do cabecalho
-    logger.info("Scrapper logs - Extraindo dados do dropdown do cabeçalho...")
-    try:
-        case_data["filling_date"] = driver.find_element(By.ID, "dataHoraDistribuicaoProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'dataHoraDistribuicaoProcesso' não encontrado")
-    try:
-        case_data["amount"] = driver.find_element(By.ID, "valorAcaoProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'valorAcaoProcesso' não encontrado")
-    try:
-        case_data["area"] = driver.find_element(By.XPATH, '//*[@id="areaProcesso"]/span').text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho '//*[@id='areaProcesso']/span' não encontrado")
-    try:
-        case_data["control"] = driver.find_element(By.ID, "numeroControleProcesso").text.strip()
-    except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'numeroControleProcesso' não encontrado")
-
-    # Partes envolvidas
-    logger.info("Scrapper logs - Extraindo partes envolvidas...")
-    try:
-        link_partes = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "linkpartes"))
-        )
-        link_partes.click()
-        logger.info("Scrapper logs - Link 'Partes do Processo' clicado.")
-
-        parties_table = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.ID, "tableTodasPartes"))
-        )
-        logger.info("Scrapper logs - Tabela de partes visível.")
-
-        # Extrai os dados
-        parties = parties_table.find_elements(By.XPATH, ".//tbody/tr")
-        logger.info(f"Scrapper logs - Encontradas {len(parties)} linhas na tabela de partes.")
-        for party in parties:
-            cols = party.find_elements(By.TAG_NAME, "td")
-            if len(cols) >= 2:
-                role = cols[0].text.strip().replace(':', '')
-                name_raw = cols[1].text.strip()
-                name = ' '.join(name_raw.split())
-
-                if name and role:
-                    case_data["envolved"].append({
-                        "name": name,
-                        "role": role
-                    })
-                else:
-                    logger.warning(f"Scraper logs - Peticao encontrada com dados faltantes: Nome='{name}', Papel='{role}'")
-        logger.info(f"Scrapper logs - {len(case_data['envolved'])} partes adicionadas.")
-
-    except (NoSuchElementException, TimeoutException) as e:
-        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as partes envolvidas: {e}")
-
-    # Movimentacoes
-    logger.info("Scrapper logs - Extraindo movimentacoes...")
-    try:
-        # Encontra o botao e clica
-        link_movimentacoes = driver.find_element(By.ID, "linkmovimentacoes")
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", link_movimentacoes)
-        see_more_btn3 = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.ID, "linkmovimentacoes"))
-            )
-        see_more_btn3.click()
-
-        #Extrair dados de movimentacoes
-        case_event_table = WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.ID, "tabelaTodasMovimentacoes"))
-        )
-        case_events = case_event_table.find_elements(By.XPATH, ".//tr[contains(@class, 'containerMovimentacao')]")
-        logger.info(f"Scrapper logs - Encontradas {len(case_events)} linhas de movimentação na tabela.")
-        if not case_events:
-            logger.info("Scrapper logs - Nenhuma movimentacao encontrada")
-
-        for case_event in case_events:
-            cols = case_event.find_elements(By.TAG_NAME, "td")
-            
-            if len(cols) >= 3:
-                date = cols[0].text.strip()
-                description = cols[2].text.strip()
-
-                if date and description:
-                    case_data["case_events"].append({
-                        "date": date,
-                        "description": description
-                    })
-                else:
-                    logger.warning(f"Scraper logs - Movimentacao encontrada com dados faltantes: Data='{date}', Descricao='{description}'")
-                
-        logger.info(f"Scrapper logs - {len(case_data['case_events'])} partes adicionadas.")
-
-    except (NoSuchElementException, TimeoutException) as e:
-        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as movimentacoes: {e}")
-
-    # Peticoes diversas
-    print("Scrapper logs - Iniciando extração de Petições...")
-
-    try:
-        # Encontra peticoes diversas na pagina
-        petitions_table = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/table[4]"))
-        )
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", petitions_table)
-        time.sleep(0.5)
-
-        petitions = petitions_table.find_element(By.TAG_NAME, "tbody")
-        petition_rows = petitions.find_elements(By.XPATH, "./tr")
-        logger.info(f"Scrapper logs - Encontradas {len(petition_rows)} linhas na tabela de peticoes")
-
-        for petition in petition_rows:
-            cols = petition.find_elements(By.TAG_NAME, "td")
-            
-            if len(cols) >= 2:
-                petition_date = cols[0].text.strip()
-                petition_type = cols[1].text.strip()
-
-                if petition_date and petition_type:
-                    case_data["petitions"].append({
-                        "date": petition_date,
-                        "type": petition_type
-                    })
-                else:
-                    logger.warning(f"Scraper logs - Peticao encontrada com dados faltantes: Data='{petition_date}', Tipo='{petition_type}'")
-        logger.info(f"Scrapper logs - {len(case_data['petitions'])} petições adicionadas")
-
-    except (NoSuchElementException, TimeoutException) as e:
-        logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as peticoes diversas: {e}")
-
-    # Incidentes
-    logger.info(f"Scrapper logs - Extraindo incidentes do processo {case_data['number']}...")
-
-    try:
-        incidents_table =WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/table[5]"))
-        )
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", incidents_table)
-        incidents = incidents_table.find_element(By.TAG_NAME, "tbody")
-        incidents_rows = incidents.find_elements(By.XPATH, "./tr")
-
-        for incident in incidents_rows:
-            cols = incident.find_elements(By.TAG_NAME, "td")
-
-            if len(cols) >= 2:
-                incident_date = cols[0].text.strip()
-                incident_class = cols[1].text.strip()
-                
-                if incident_date and incident_class:
-                    case_data["incidents"].append({
-                        "date": incident_date,
-                        "class_description": incident_class
-                    })
-                else:
-                    logger.warning(f"Scraper logs - Incidente encontrado com dados faltantes: Data='{incident_date}', Classe='{incident_class}'")
-            logger.info(f"Scrapper logs - {len(case_data['incidents'])} incidentes adicionados")
-    except Exception as e:
-        logger.error(f"Erro processando incidente do processo {case_data['number']}: {e}", exc_info=False)
-
-    logger.info(f"{len(case_data['incidents'])} incidents extracted for case {case_data['number']}")
-
+    # Save to database
     case_id = repository.add_or_update_process(case_data)
     if case_id:
         for envolved in case_data["envolved"]:
             repository.add_envolved(case_id, envolved)
-
         for case_event in case_data["case_events"]:
             repository.add_case_event(case_id, case_event)
-
         for petition in case_data["petitions"]:
             repository.add_petition(case_id, petition)
-
         for incident in case_data["incidents"]:
             repository.add_incident(case_id, incident)
+
+    return case_data
 
 
 if __name__ == "__main__":

@@ -98,20 +98,20 @@ if __name__ == "__main__":
     )
 
     action_group.add_argument(
-        "--details", 
+        "--detalhes", 
         metavar='NUMERO_PROCESSO', 
         type=str, 
         help="Mostrar detalhes completos para o número do processo especificado."
     )
 
     action_group.add_argument(
-        "--recent-events",
+        "--movimentacoes-recentes",
         action="store_true",
         help="Mostrar as últimas 50 movimentações adicionadas ao banco (todos os processos)."
     )
 
     action_group.add_argument(
-        "--summary", 
+        "--contagem-dados", 
         action="store_true", 
         help="Mostrar contagem de registros em cada tabela." # Descrição do argumento
     )
@@ -119,11 +119,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.processos:
         show_all_case_numbers()
-    elif args.details:
-        show_case_details(args.details)
-    elif args.recent_events:
+    elif args.detalhes:
+        show_case_details(args.detalhes)
+    elif args.movimentacoes_recentes:
         show_latest_events()
-    elif args.summary:
+    elif args.contagem_dados:
         show_summary()
     else:
         print("Nenhuma ação específica solicitada. Exibindo lista de números de processos por padrão.")

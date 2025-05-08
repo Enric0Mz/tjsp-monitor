@@ -24,9 +24,9 @@ O objetivo principal é automatizar o processo de coleta de dados para análise 
 - Possui tratamento de erros para lidar com situações onde elementos específicos ou seções de dados podem estar ausentes na página.
 - **Inclui um script de visualização (`src/view_data.py`) com opções de linha de comando para:**
   - Listar todos os números de processos armazenados (`--processos`).
-  - Exibir detalhes completos de um processo específico (`--details NUMERO_PROCESSO`).
-  - Mostrar as últimas 50 movimentações adicionadas ao banco (`--recent-events`).
-  - Exibir um resumo com a contagem de registros por tabela (`--summary`).
+  - Exibir detalhes completos de um processo específico (`--detalhes NUMERO_PROCESSO`).
+  - Mostrar as últimas 50 movimentações adicionadas ao banco (`--movimentacoes_recentes`).
+  - Exibir um resumo com a contagem de registros por tabela (`--contagem-dados`).
 
 ## Tecnologias e Requisitos
 
@@ -72,7 +72,7 @@ Execute os comandos a partir do **diretório raiz** do projeto.
     # Usando poetry run:
     poetry run python -m src.scraper
     # Ou ative o ambiente antes (poetry shell) e depois execute:
-    # python -m src.scraper
+    python -m src.scraper
     ```
 
     - Isso iniciará o processo de scraping para os números definidos em `CASE_NUMBERS`.
@@ -89,16 +89,16 @@ Execute os comandos a partir do **diretório raiz** do projeto.
       ```
     - **Mostrar Detalhes de um Processo:**
       ```bash
-      poetry run python -m src.view_data --details "NUMERO_COMPLETO_DO_PROCESSO"
-      # Exemplo: poetry run python -m src.view_data --details "1075531-81.2021.8.26.0053"
+      poetry run python -m src.view_data --detalhes "NUMERO_COMPLETO_DO_PROCESSO"
+      # Exemplo: poetry run python -m src.view_data --detalhes "1075531-81.2021.8.26.0053"
       ```
     - **Mostrar Últimas 50 Movimentações:**
       ```bash
-      poetry run python -m src.view_data --recent-events
+      poetry run python -m src.view_data --movimentacoes-recentes
       ```
     - **Mostrar Resumo/Contagens (se implementado no repositório):**
       ```bash
-      poetry run python -m src.view_data --summary
+      poetry run python -m src.view_data --contagem-dados
       ```
     - **Obter Ajuda:**
       ```bash
