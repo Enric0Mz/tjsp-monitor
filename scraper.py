@@ -104,7 +104,8 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         "complementary_ids": "",
         "envolved": [],
         "case_events": [],
-        "petitions": []
+        "petitions": [],
+        "incidents": []
     }
 
 
@@ -156,7 +157,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
             EC.element_to_be_clickable((By.ID, "linkpartes"))
         )
         link_partes.click()
-        logger.info("\nScrapper logs - Link 'Partes do Processo' clicado.")
+        logger.info("Scrapper logs - Link 'Partes do Processo' clicado.")
 
         parties_table = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.ID, "tableTodasPartes"))
@@ -252,6 +253,37 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
     except (NoSuchElementException, TimeoutException) as e:
         logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as peticoes diversas: {e}")
 
+    # Incidentes
+    logger.info(f"Scrapper logs - Extraindo incidentes do processo {case_data['number']}...")
+
+    try:
+        incidents_table =WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/table[5]"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", incidents_table)
+        incidents = incidents_table.find_element(By.TAG_NAME, "tbody")
+        incidents_rows = incidents.find_elements(By.XPATH, "./tr")
+
+        for incident in incidents_rows:
+            cols = incident.find_elements(By.TAG_NAME, "td")
+
+            if len(cols) >= 2:
+                incident_date = cols[0].text.strip()
+                incident_class = cols[1].text.strip()
+                
+                if incident_date and incident_class:
+                    case_data["incidents"].append({
+                        "date": incident_date,
+                        "class_description": incident_class
+                    })
+                else:
+                    logger.warning(f"Scraper logs - Incidente encontrado com dados faltantes: Data='{incident_date}', Classe='{incident_class}'")
+            logger.info(f"Scrapper logs - {len(case_data['incidents'])} incidentes adicionados.")
+    except Exception as e:
+        logger.error(f"Erro processando incidente do processo {case_data['number']}: {e}", exc_info=False)
+
+    logger.info(f"{len(case_data['incidents'])} incidents extracted for case {case_data['number']}")
+
     case_id = repository.add_or_update_process(case_data)
     if case_id:
         for envolved in case_data["envolved"]:
@@ -262,6 +294,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
 
         for petition in case_data["petitions"]:
             repository.add_petition(case_id, petition)
+
+        for incident in case_data["incidents"]:
+            repository.add_incident(case_id, incident)
 
 
 if __name__ == "__main__":
