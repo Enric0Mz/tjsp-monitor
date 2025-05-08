@@ -179,6 +179,8 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "name": name,
                         "role": role
                     })
+                else:
+                    logger.warning(f"Scraper logs - Peticao encontrada com dados faltantes: Nome='{name}', Papel='{role}'")
         logger.info(f"Scrapper logs - {len(case_data['envolved'])} partes adicionadas.")
 
     except (NoSuchElementException, TimeoutException) as e:
@@ -216,6 +218,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "date": date,
                         "description": description
                     })
+                else:
+                    logger.warning(f"Scraper logs - Movimentacao encontrada com dados faltantes: Data='{date}', Descricao='{description}'")
+                
         logger.info(f"Scrapper logs - {len(case_data['case_events'])} partes adicionadas.")
 
     except (NoSuchElementException, TimeoutException) as e:
@@ -234,7 +239,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
 
         petitions = petitions_table.find_element(By.TAG_NAME, "tbody")
         petition_rows = petitions.find_elements(By.XPATH, "./tr")
-        logger.info(f"\nScrapper logs - Encontradas {len(petition_rows)} linhas na tabela de peticoes.")
+        logger.info(f"Scrapper logs - Encontradas {len(petition_rows)} linhas na tabela de peticoes")
 
         for petition in petition_rows:
             cols = petition.find_elements(By.TAG_NAME, "td")
@@ -248,7 +253,9 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                         "date": petition_date,
                         "type": petition_type
                     })
-        logger.info(f"Scrapper logs - {len(case_data['petitions'])} petições adicionadas.")
+                else:
+                    logger.warning(f"Scraper logs - Peticao encontrada com dados faltantes: Data='{petition_date}', Tipo='{petition_type}'")
+        logger.info(f"Scrapper logs - {len(case_data['petitions'])} petições adicionadas")
 
     except (NoSuchElementException, TimeoutException) as e:
         logger.error(f"Scrapper logs - Aviso: Não foi possível extrair as peticoes diversas: {e}")
@@ -278,7 +285,7 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
                     })
                 else:
                     logger.warning(f"Scraper logs - Incidente encontrado com dados faltantes: Data='{incident_date}', Classe='{incident_class}'")
-            logger.info(f"Scrapper logs - {len(case_data['incidents'])} incidentes adicionados.")
+            logger.info(f"Scrapper logs - {len(case_data['incidents'])} incidentes adicionados")
     except Exception as e:
         logger.error(f"Erro processando incidente do processo {case_data['number']}: {e}", exc_info=False)
 
