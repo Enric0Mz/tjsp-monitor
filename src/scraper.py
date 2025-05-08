@@ -100,8 +100,6 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         "area": "",
         "filling_date": "",
         "control": "",
-        "complementary": False,
-        "complementary_ids": "",
         "envolved": [],
         "case_events": [],
         "petitions": [],
@@ -120,35 +118,58 @@ def scrap_case(driver: webdriver.Chrome, case_number: str) -> Dict[str, Any]:
         )
         logger.info("Scrapper logs - Dropdown de dados secundários expandido.")
     except (NoSuchElementException, TimeoutException) as e:
-        logger.error(f"Scrapper logs - Aviso: Não foi possível expandir/encontrar dados secundários: {e}")
+        logger.error(f"Scrapper logs - Aviso: Não foi possível expandir/encontrar dados secundários")
         pass
 
     # Extracao de dados - cabecalho
     logger.info("Scrapper logs - Extraindo dados do cabeçalho...")
     try:
         case_data["_class"] = driver.find_element(By.ID, "classeProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'classeProcesso' não encontrado")
+    try:
         case_data["subject"] = driver.find_element(By.ID, "assuntoProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'assuntoProcesso' não encontrado")
+    try:
         case_data["foro"] = driver.find_element(By.ID, "foroProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'foroProcesso' não encontrado")
+    try:
         case_data["division"] = driver.find_element(By.ID, "varaProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'varaProcesso' não encontrado")
+    try:
         case_data["judge"] = driver.find_element(By.ID, "juizProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'juizProcesso' não encontrado")
+    try:
         status_elements = driver.find_elements(By.CSS_SELECTOR, "span.unj-tag[style*='margin-left']")
         if status_elements:
             case_data["status"] = status_elements[0].text.strip()
         else:
             case_data["status"] = driver.find_element(By.CLASS_NAME, "unj-tag").text.strip()
-
     except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho não encontrado: {e}")
+        logger.error(f"Scrapper logs - Aviso: Elemento do cabeçalho 'span.unj-tag[style*='margin-left']' não encontrado")
 
     # Extracao de dados - dropdown do cabecalho
     logger.info("Scrapper logs - Extraindo dados do dropdown do cabeçalho...")
     try:
         case_data["filling_date"] = driver.find_element(By.ID, "dataHoraDistribuicaoProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'dataHoraDistribuicaoProcesso' não encontrado")
+    try:
         case_data["amount"] = driver.find_element(By.ID, "valorAcaoProcesso").text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'valorAcaoProcesso' não encontrado")
+    try:
         case_data["area"] = driver.find_element(By.XPATH, '//*[@id="areaProcesso"]/span').text.strip()
+    except NoSuchElementException as e:
+        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho '//*[@id='areaProcesso']/span' não encontrado")
+    try:
         case_data["control"] = driver.find_element(By.ID, "numeroControleProcesso").text.strip()
     except NoSuchElementException as e:
-        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho não encontrado: {e}")
+        logger.error(f"Scrapper logs - Aviso: Elemento do dropdown do cabeçalho 'numeroControleProcesso' não encontrado")
 
     # Partes envolvidas
     logger.info("Scrapper logs - Extraindo partes envolvidas...")
