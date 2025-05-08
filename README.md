@@ -38,3 +38,92 @@ O objetivo principal é automatizar o processo de coleta de dados para análise 
   - `sqlite3` (embutido no Python) - Para interação com o banco de dados.
 - **Navegador:** Google Chrome (precisa estar instalado)
 - **Banco de Dados:** SQLite
+
+## Configuração e Instalação
+
+1.  **Clone o Repositório:**
+
+    git clone [https://github.com/Enric0Mz/tjsp-monitor.git](https://github.com/Enric0Mz/tjsp-monitor.git)
+
+    cd [tjsp-monitor]
+
+2.  **Instale o Poetry (se ainda não tiver):**
+    Siga as instruções oficiais em [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation).
+
+3.  **Instale as Dependências do Projeto:**
+    Navegue até o diretório raiz do projeto e execute:
+
+    ```bash
+    poetry install
+    ```
+
+    O Poetry criará um ambiente virtual automaticamente (ou usará um existente) e instalará as dependências do `pyproject.toml`.
+
+4.  **Instale o Google Chrome:**
+    Certifique-se de que você tem o Google Chrome instalado. O `webdriver-manager` cuidará do download do ChromeDriver.
+
+## Como Executar
+
+Execute os comandos a partir do **diretório raiz** do projeto.
+
+1.  **Executar o Scraper:**
+
+    ```bash
+    # Usando poetry run:
+    poetry run python -m src.scraper
+    # Ou ative o ambiente antes (poetry shell) e depois execute:
+    # python -m src.scraper
+    ```
+
+    - Isso iniciará o processo de scraping para os números definidos em `CASE_NUMBERS`.
+    - Logs serão exibidos no console e salvos em `logs/scraper.log`.
+    - Os dados serão salvos/atualizados em `data/stored_data.db`.
+
+2.  **Visualizar os Dados:**
+    Use o script `view_data.py` com as seguintes opções:
+    - **Listar Números de Processos (Ação Padrão):**
+      ```bash
+      poetry run python -m src.view_data
+      # OU
+      python -m src.view_data
+      ```
+    - **Mostrar Detalhes de um Processo:**
+      ```bash
+      poetry run python -m src.view_data --details "NUMERO_COMPLETO_DO_PROCESSO"
+      # Exemplo: poetry run python -m src.view_data --details "1075531-81.2021.8.26.0053"
+      ```
+    - **Mostrar Últimas 50 Movimentações:**
+      ```bash
+      poetry run python -m src.view_data --recent-events
+      ```
+    - **Mostrar Resumo/Contagens (se implementado no repositório):**
+      ```bash
+      poetry run python -m src.view_data --summary
+      ```
+    - **Obter Ajuda:**
+      ```bash
+      poetry run python -m src.view_data --help
+      ```
+
+## Dívidas técnicas / Limitações
+
+- **Dependência do Site:** Mudanças no site TJSP ESAJ podem quebrar o scraper.
+- **Fragilidade dos Seletores:** Alguns seletores podem precisar de ajustes futuros.
+- **Rate Limiting/Bloqueio:** Não implementado tratamento para bloqueios por excesso de requisições.
+- **Modo Headless** O modo --headless, usado para extrair dados sem abertura do navegador, não funciona como esperado
+
+## Melhorias Futuras
+
+- Seletores mais robustos.
+- Implementação de API para visualização de dados robusta e integrações com outros sistemas
+- Scrapping de documentos relacionados, como precatórios e incidentes do processo
+- Containerização da aplicação com Docker
+
+## Autor
+
+- **Enrico Marquez**
+- **enricovmarquezz@gmail.com**
+
+## Licença
+
+Este projeto é licenciado sob os termos da Licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
